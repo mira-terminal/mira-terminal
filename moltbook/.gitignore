@@ -1,0 +1,7 @@
+# Moltbook credentials and local runtime state
+.env
+*.key
+credentials*
+state/
+logs/
+__pycache__/
