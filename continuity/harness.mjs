@@ -16,13 +16,33 @@ class Ledger {
 }
 
 class Supervisor {
-  constructor() { this.epoch = 0; this.owner = null; this.fingerprints = new Map(); }
+  constructor() {
+    this.epoch = 0;
+    this.owner = null;
+    this.fingerprints = new Map();
+    this.progressWindow = [];
+  }
   acquire(owner) { this.epoch += 1; this.owner = owner; return this.epoch; }
   canWrite(owner, epoch) { return owner === this.owner && epoch === this.epoch; }
   observeFailure(fp, changedVariable = false) {
     const count = changedVariable ? 1 : (this.fingerprints.get(fp) || 0) + 1;
     this.fingerprints.set(fp, count);
     return count > 1 ? "STOP_LOOP" : "RETRY_ALLOWED";
+  }
+  observeProgress(state, remainingDistance) {
+    const sample = { stateHash: hash(state), remainingDistance };
+    this.progressWindow.push(sample);
+    if (this.progressWindow.length > 6) this.progressWindow.shift();
+
+    if (this.progressWindow.length < 4) return "CONTINUE";
+    const recent = this.progressWindow.slice(-4);
+    const bestBefore = Math.min(...recent.slice(0, -1).map(x => x.remainingDistance));
+    if (recent.at(-1).remainingDistance < bestBefore) return "PROGRESS";
+
+    const uniqueStates = new Set(recent.map(x => x.stateHash)).size;
+    const noDistanceGain = recent.every(x => x.remainingDistance >= bestBefore);
+    if (noDistanceGain && uniqueStates <= 2) return "STOP_STALL";
+    return "CONTINUE";
   }
 }
 
@@ -65,7 +85,19 @@ export function runAdversarialSuite() {
   assert.equal(supervisor.observeFailure("HTTP401"), "STOP_LOOP", "same failure without changed variable must stop");
   assert.equal(supervisor.observeFailure("HTTP401", true), "RETRY_ALLOWED", "changed variable permits a bounded retry");
 
-  return { ok: true, tests: 9, checkpoint, activeEpoch: newEpoch };
+  const progressSupervisor = new Supervisor();
+  assert.equal(progressSupervisor.observeProgress({ node: "A" }, 5), "CONTINUE");
+  assert.equal(progressSupervisor.observeProgress({ node: "B" }, 5), "CONTINUE");
+  assert.equal(progressSupervisor.observeProgress({ node: "A" }, 5), "CONTINUE");
+  assert.equal(progressSupervisor.observeProgress({ node: "B" }, 5), "STOP_STALL", "A/B cycling without objective-distance reduction must stop");
+
+  const advancingSupervisor = new Supervisor();
+  advancingSupervisor.observeProgress({ node: "A" }, 5);
+  advancingSupervisor.observeProgress({ node: "B" }, 5);
+  advancingSupervisor.observeProgress({ node: "A" }, 5);
+  assert.equal(advancingSupervisor.observeProgress({ node: "C" }, 4), "PROGRESS", "novel activity only counts when objective distance improves");
+
+  return { ok: true, tests: 11, checkpoint, activeEpoch: newEpoch };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) console.log(JSON.stringify(runAdversarialSuite(), null, 2));
