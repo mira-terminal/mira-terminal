@@ -115,6 +115,65 @@ function validateHandoff({ assignedOwner, acceptedBy, authorityToFix, acceptance
   return { ok: true };
 }
 
+function validateBeliefRevision({
+  priorHypothesis,
+  priorConfidence,
+  nextHypothesis,
+  nextConfidence,
+  independentPriorRecorded,
+  trigger,
+  allowedTriggers,
+  verifiedEvidenceTokens,
+}) {
+  const substantiveChange = nextHypothesis !== priorHypothesis || nextConfidence > priorConfidence;
+  if (!substantiveChange) return { ok: true };
+  if (!independentPriorRecorded) return { ok: false, reason: "independent_prior_missing" };
+  if (!trigger || !allowedTriggers.includes(trigger)) return { ok: false, reason: "revision_trigger_unregistered" };
+  if (!verifiedEvidenceTokens?.length) return { ok: false, reason: "social_only_revision" };
+  for (const token of verifiedEvidenceTokens) {
+    if (!token.validated || !token.sourceHash || !token.observedAt) return { ok: false, reason: "evidence_token_invalid" };
+  }
+  return { ok: true };
+}
+
+function validateRobustnessVector({ epistemic, navigational, minimum = 0.8 }) {
+  if (epistemic < minimum) return { ok: false, reason: "epistemic_gap" };
+  if (navigational < minimum) return { ok: false, reason: "navigational_gap" };
+  return { ok: true };
+}
+
+function validateCapabilityFreshness({
+  contractHash,
+  expectedContractHash,
+  verifiedAt,
+  ttlMs,
+  semanticProbeOk,
+  postconditionVerifier,
+}, nowMs) {
+  if (contractHash !== expectedContractHash) return { ok: false, reason: "capability_contract_changed" };
+  if (!Number.isFinite(verifiedAt) || nowMs - verifiedAt > ttlMs) return { ok: false, reason: "capability_stale" };
+  if (!semanticProbeOk) return { ok: false, reason: "semantic_probe_failed" };
+  if (!postconditionVerifier) return { ok: false, reason: "postcondition_verifier_missing" };
+  return { ok: true };
+}
+
+function validateImprovementClaim({
+  baseline,
+  immediate,
+  retained,
+  retainedAfterMs,
+  minimumRetentionMs,
+  compensatingRegressions = 0,
+  oscillationDetected = false,
+}) {
+  if (immediate <= baseline) return { ok: false, reason: "no_immediate_gain" };
+  if (retainedAfterMs < minimumRetentionMs) return { ok: false, reason: "retention_window_incomplete" };
+  if (retained <= baseline) return { ok: false, reason: "improvement_not_retained" };
+  if (compensatingRegressions > 0) return { ok: false, reason: "compensating_regression" };
+  if (oscillationDetected) return { ok: false, reason: "oscillation_not_improvement" };
+  return { ok: true };
+}
+
 function bootstrap({ kernel, checkpoint, ledger, supervisor, runtime, world, authority, owner, epoch }) {
   if (hash(kernel) !== checkpoint.kernelHash) return { decision: "BLOCK", reason: "kernel_integrity" };
   if (runtime.schema !== checkpoint.runtimeSchema) return { decision: "REPLAN", reason: "runtime_changed" };
@@ -205,7 +264,40 @@ export function runAdversarialSuite() {
   assert.equal(validateHandoff({ ...handoff, authorityToFix: false }, now).reason, "owner_lacks_authority", "ownership without authority must fail closed");
   assert.equal(validateHandoff({ ...handoff, expiresAt: 900 }, now).reason, "handoff_orphaned", "expired unclosed work must become an explicit orphan/escalation condition");
 
-  return { ok: true, tests: 27, checkpoint, activeEpoch: newEpoch };
+  const evidenceToken = { validated: true, sourceHash: hash("source-a"), observedAt: 990 };
+  const revision = {
+    priorHypothesis: "H1", priorConfidence: 0.55,
+    nextHypothesis: "H2", nextConfidence: 0.7,
+    independentPriorRecorded: true,
+    trigger: "external_evidence",
+    allowedTriggers: ["external_evidence", "direct_observation"],
+    verifiedEvidenceTokens: [evidenceToken],
+  };
+  assert.deepEqual(validateBeliefRevision(revision), { ok: true });
+  assert.equal(validateBeliefRevision({ ...revision, verifiedEvidenceTokens: [] }).reason, "social_only_revision", "peer agreement, prestige, majority size, or reputation alone must not move belief state");
+  assert.equal(validateBeliefRevision({ ...revision, independentPriorRecorded: false }).reason, "independent_prior_missing", "multi-agent deliberation must record an independent prior before exposure to peers");
+
+  assert.deepEqual(validateRobustnessVector({ epistemic: 0.9, navigational: 0.9 }), { ok: true });
+  assert.equal(validateRobustnessVector({ epistemic: 0.95, navigational: 0.5 }).reason, "navigational_gap", "strong resistance to poisoned beliefs must not hide maze/loop weakness");
+  assert.equal(validateRobustnessVector({ epistemic: 0.5, navigational: 0.95 }).reason, "epistemic_gap", "strong loop escape must not hide poisoned-world susceptibility");
+
+  const freshCapability = {
+    contractHash: "tool-v3", expectedContractHash: "tool-v3",
+    verifiedAt: 950, ttlMs: 100,
+    semanticProbeOk: true, postconditionVerifier: "verify-output-v2",
+  };
+  assert.deepEqual(validateCapabilityFreshness(freshCapability, now), { ok: true });
+  assert.equal(validateCapabilityFreshness({ ...freshCapability, contractHash: "tool-v4" }, now).reason, "capability_contract_changed", "schema or contract drift must invalidate cached capability knowledge");
+  assert.equal(validateCapabilityFreshness({ ...freshCapability, verifiedAt: 800 }, now).reason, "capability_stale", "capability must have an explicit freshness horizon");
+  assert.equal(validateCapabilityFreshness({ ...freshCapability, semanticProbeOk: false }, now).reason, "semantic_probe_failed", "HTTP success is not semantic liveness");
+
+  const improvement = { baseline: 0.6, immediate: 0.8, retained: 0.75, retainedAfterMs: 30, minimumRetentionMs: 30, compensatingRegressions: 0, oscillationDetected: false };
+  assert.deepEqual(validateImprovementClaim(improvement), { ok: true });
+  assert.equal(validateImprovementClaim({ ...improvement, retainedAfterMs: 5 }).reason, "retention_window_incomplete", "implementation success is not demonstrated improvement before a retention window closes");
+  assert.equal(validateImprovementClaim({ ...improvement, retained: 0.55 }).reason, "improvement_not_retained", "reversion must invalidate an improvement claim");
+  assert.equal(validateImprovementClaim({ ...improvement, oscillationDetected: true }).reason, "oscillation_not_improvement", "alternating overcorrections must not be counted as cumulative improvement");
+
+  return { ok: true, tests: 40, checkpoint, activeEpoch: newEpoch };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) console.log(JSON.stringify(runAdversarialSuite(), null, 2));
