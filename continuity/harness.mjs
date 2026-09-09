@@ -87,6 +87,34 @@ function hasWaitForCycle(edges) {
   return false;
 }
 
+function validateMemoryProjection(episode, abstraction) {
+  if (!episode?.raw || !episode?.constraints) return { ok: false, reason: "episode_missing" };
+  if (abstraction?.sourceHash !== hash(episode.raw)) return { ok: false, reason: "source_lineage_missing" };
+  if (abstraction.replacesSource === true) return { ok: false, reason: "episodic_source_must_survive" };
+
+  const projected = new Set((abstraction.constraints || []).map(c => hash(c)));
+  for (const constraint of episode.constraints) {
+    if (!projected.has(hash(constraint))) return { ok: false, reason: "constraint_lost", constraint };
+  }
+  return { ok: true };
+}
+
+function validateEvidenceSufficiency({ coverage, conflicts, support, threshold = 1 }) {
+  if (conflicts > 0) return { ok: false, reason: "evidence_conflict" };
+  if (coverage < threshold) return { ok: false, reason: "evidence_insufficient" };
+  if (support < threshold) return { ok: false, reason: "claim_support_insufficient" };
+  return { ok: true };
+}
+
+function validateHandoff({ assignedOwner, acceptedBy, authorityToFix, acceptanceCondition, expiresAt }, nowMs) {
+  if (!assignedOwner) return { ok: false, reason: "owner_missing" };
+  if (acceptedBy !== assignedOwner) return { ok: false, reason: "handoff_unaccepted" };
+  if (!authorityToFix) return { ok: false, reason: "owner_lacks_authority" };
+  if (!acceptanceCondition) return { ok: false, reason: "acceptance_condition_missing" };
+  if (expiresAt <= nowMs) return { ok: false, reason: "handoff_orphaned" };
+  return { ok: true };
+}
+
 function bootstrap({ kernel, checkpoint, ledger, supervisor, runtime, world, authority, owner, epoch }) {
   if (hash(kernel) !== checkpoint.kernelHash) return { decision: "BLOCK", reason: "kernel_integrity" };
   if (runtime.schema !== checkpoint.runtimeSchema) return { decision: "REPLAN", reason: "runtime_changed" };
@@ -151,7 +179,33 @@ export function runAdversarialSuite() {
   assert.equal(hasWaitForCycle([["A", "B"], ["B", "A"]]), true, "mutual waits form a deadlock cycle");
   assert.equal(hasWaitForCycle([["A", "B"], ["B", "C"]]), false, "acyclic waits are not deadlock");
 
-  return { ok: true, tests: 17, checkpoint, activeEpoch: newEpoch };
+  const episode = {
+    raw: { decision: "enable M3 support", evidence: ["test-1", "test-2"] },
+    constraints: [
+      { key: "sleep", op: "eq", value: "disabled" },
+      { key: "hdmi", op: "eq", value: "disabled" },
+    ],
+  };
+  const validAbstraction = {
+    sourceHash: hash(episode.raw), replacesSource: false,
+    summary: "M3 support under restricted conditions",
+    constraints: [...episode.constraints],
+  };
+  assert.deepEqual(validateMemoryProjection(episode, validAbstraction), { ok: true });
+  assert.equal(validateMemoryProjection(episode, { ...validAbstraction, replacesSource: true }).reason, "episodic_source_must_survive", "consolidation must never erase the source episode");
+  assert.equal(validateMemoryProjection(episode, { ...validAbstraction, constraints: [episode.constraints[0]] }).reason, "constraint_lost", "summary promotion must preserve all governing constraints structurally");
+
+  assert.deepEqual(validateEvidenceSufficiency({ coverage: 1, conflicts: 0, support: 1 }), { ok: true });
+  assert.equal(validateEvidenceSufficiency({ coverage: 0.7, conflicts: 0, support: 1 }).reason, "evidence_insufficient", "confidence over a retrieved subset must not masquerade as complete coverage");
+  assert.equal(validateEvidenceSufficiency({ coverage: 1, conflicts: 1, support: 1 }).reason, "evidence_conflict", "unresolved contradiction must block a proof-carrying claim");
+
+  const handoff = { assignedOwner: "worker-b", acceptedBy: "worker-b", authorityToFix: true, acceptanceCondition: "tests pass", expiresAt: 2_000 };
+  assert.deepEqual(validateHandoff(handoff, now), { ok: true });
+  assert.equal(validateHandoff({ ...handoff, acceptedBy: null }, now).reason, "handoff_unaccepted", "attention or assignment alone must not transfer ownership");
+  assert.equal(validateHandoff({ ...handoff, authorityToFix: false }, now).reason, "owner_lacks_authority", "ownership without authority must fail closed");
+  assert.equal(validateHandoff({ ...handoff, expiresAt: 900 }, now).reason, "handoff_orphaned", "expired unclosed work must become an explicit orphan/escalation condition");
+
+  return { ok: true, tests: 27, checkpoint, activeEpoch: newEpoch };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) console.log(JSON.stringify(runAdversarialSuite(), null, 2));
