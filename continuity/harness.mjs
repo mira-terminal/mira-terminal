@@ -46,6 +46,47 @@ class Supervisor {
   }
 }
 
+function isSubset(child, parent) {
+  const p = new Set(parent);
+  return child.every(x => p.has(x));
+}
+
+function validateDelegationChain(chain, nowMs) {
+  for (let i = 0; i < chain.length; i += 1) {
+    const grant = chain[i];
+    if (!grant.active || grant.expiresAt <= nowMs) return { ok: false, reason: "delegation_inactive_or_expired", index: i };
+    if (i > 0) {
+      const parent = chain[i - 1];
+      if (grant.parentId !== parent.id) return { ok: false, reason: "delegation_lineage_broken", index: i };
+      if (!isSubset(grant.scope, parent.scope)) return { ok: false, reason: "delegation_scope_expanded", index: i };
+      if (grant.expiresAt > parent.expiresAt) return { ok: false, reason: "delegation_outlives_parent", index: i };
+    }
+  }
+  return { ok: true };
+}
+
+function hasWaitForCycle(edges) {
+  const graph = new Map();
+  for (const [from, to] of edges) {
+    if (!graph.has(from)) graph.set(from, []);
+    graph.get(from).push(to);
+    if (!graph.has(to)) graph.set(to, []);
+  }
+  const visiting = new Set();
+  const visited = new Set();
+  const dfs = node => {
+    if (visiting.has(node)) return true;
+    if (visited.has(node)) return false;
+    visiting.add(node);
+    for (const next of graph.get(node) || []) if (dfs(next)) return true;
+    visiting.delete(node);
+    visited.add(node);
+    return false;
+  };
+  for (const node of graph.keys()) if (dfs(node)) return true;
+  return false;
+}
+
 function bootstrap({ kernel, checkpoint, ledger, supervisor, runtime, world, authority, owner, epoch }) {
   if (hash(kernel) !== checkpoint.kernelHash) return { decision: "BLOCK", reason: "kernel_integrity" };
   if (runtime.schema !== checkpoint.runtimeSchema) return { decision: "REPLAN", reason: "runtime_changed" };
@@ -97,7 +138,20 @@ export function runAdversarialSuite() {
   advancingSupervisor.observeProgress({ node: "A" }, 5);
   assert.equal(advancingSupervisor.observeProgress({ node: "C" }, 4), "PROGRESS", "novel activity only counts when objective distance improves");
 
-  return { ok: true, tests: 11, checkpoint, activeEpoch: newEpoch };
+  const now = 1_000;
+  const validChain = [
+    { id: "root", parentId: null, active: true, expiresAt: 2_000, scope: ["read", "write"] },
+    { id: "child", parentId: "root", active: true, expiresAt: 1_800, scope: ["read"] },
+  ];
+  assert.deepEqual(validateDelegationChain(validChain, now), { ok: true });
+  assert.equal(validateDelegationChain([{ ...validChain[0], active: false }, validChain[1]], now).ok, false, "revoked parent invalidates descendant authority");
+  assert.equal(validateDelegationChain([validChain[0], { ...validChain[1], expiresAt: 2_100 }], now).reason, "delegation_outlives_parent", "child authority must not outlive parent");
+  assert.equal(validateDelegationChain([validChain[0], { ...validChain[1], scope: ["read", "admin"] }], now).reason, "delegation_scope_expanded", "delegation may only attenuate authority");
+
+  assert.equal(hasWaitForCycle([["A", "B"], ["B", "A"]]), true, "mutual waits form a deadlock cycle");
+  assert.equal(hasWaitForCycle([["A", "B"], ["B", "C"]]), false, "acyclic waits are not deadlock");
+
+  return { ok: true, tests: 17, checkpoint, activeEpoch: newEpoch };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) console.log(JSON.stringify(runAdversarialSuite(), null, 2));
