@@ -14,3 +14,4 @@ export * from './adaptive.js';
 export * from './evaluation.js';
 export * from './organization.js';
 export * from './mission-runtime.js';
+export * from './governance.js';
