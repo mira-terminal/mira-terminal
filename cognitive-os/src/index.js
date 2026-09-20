@@ -9,3 +9,4 @@ export * from './persistence.js';
 export * from './orchestrator.js';
 export * from './models.js';
 export * from './intelligent-planner.js';
+export * from './tool-plane.js';
