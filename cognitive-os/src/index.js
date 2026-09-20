@@ -16,3 +16,4 @@ export * from './organization.js';
 export * from './mission-runtime.js';
 export * from './governance.js';
 export * from './executive-system.js';
+export * from './improvement-lab.js';
