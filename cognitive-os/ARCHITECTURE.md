@@ -39,17 +39,17 @@ Completed Run + Episode
 
 ## Road to Level 10
 
-### v0.1 — Cognitive kernel (current)
+### v0.1 — Cognitive kernel
 Goal/state/memory/planning/orchestration/verification/recovery/governance primitives.
 
-### v0.2 — Persistence (current)
+### v0.2 — Persistence
 Durable file/in-memory run ledger, append-only event journal, cognitive snapshots, checkpoint/resume, and no-repeat continuation of completed work.
 
 ### v0.2.1 — Production persistence
 Postgres/Supabase adapter, optimistic concurrency, run leases, and multi-worker safety.
 
-### v0.3 — Intelligence adapters
-Provider-neutral LLM interface, model routing, specialist roles, structured-output enforcement.
+### v0.3 — Intelligence adapters (current)
+Provider-neutral structured model interface, repair-on-invalid-output, role-aware model routing with fallback, model-driven planning, and model-backed specialist agents. Provider-specific API bindings remain external adapters.
 
 ### v0.4 — Tool execution plane
 Browser, code sandbox, web research, files, APIs, database and connector adapters with permissions.
