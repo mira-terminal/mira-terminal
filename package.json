@@ -8,9 +8,11 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test cognitive-os/test/*.test.js"
+    "test": "node --test cognitive-os/test/*.test.js",
+    "start:mira": "node cognitive-os/src/runtime-server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "pg": "^8.16.3"
   }
 }
