@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CapabilitySelfModel, CurriculumEngine, GovernanceAuditor } from './meta-cognition.js';
+import { CapabilitySelfModel, CurriculumEngine, GovernanceAuditor } from '../src/meta-cognition.js';
 
 test('self model tracks competence and calibration instead of raw confidence alone', () => {
   const model = new CapabilitySelfModel();
