@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PortfolioController, StrategicPortfolioAllocator } from './portfolio.js';
+import { PortfolioController, StrategicPortfolioAllocator } from '../src/portfolio.js';
 
 test('allocator prefers risk-adjusted expected value instead of raw headline value', () => {
   const allocator=new StrategicPortfolioAllocator({explorationFraction:0,domainCap:1});
