@@ -10,3 +10,4 @@ export * from './orchestrator.js';
 export * from './models.js';
 export * from './intelligent-planner.js';
 export * from './tool-plane.js';
+export * from './adaptive.js';
