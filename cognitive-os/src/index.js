@@ -19,3 +19,4 @@ export * from './executive-system.js';
 export * from './improvement-lab.js';
 export * from './council.js';
 export * from './meta-cognition.js';
+export * from './portfolio.js';
