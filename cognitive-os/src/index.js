@@ -7,3 +7,5 @@ export * from './planner.js';
 export * from './improvement.js';
 export * from './persistence.js';
 export * from './orchestrator.js';
+export * from './models.js';
+export * from './intelligent-planner.js';

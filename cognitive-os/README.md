@@ -1,4 +1,4 @@
-# Mira Cognitive OS — Core v0.2
+# Mira Cognitive OS — Core v0.3
 
 This directory is the first executable slice of a Level-10-oriented cognitive architecture for Mira.
 
@@ -16,19 +16,21 @@ This directory is the first executable slice of a Level-10-oriented cognitive ar
 - **Durable run checkpoints** — file or in-memory run stores persist task state and cognitive snapshots.
 - **Append-only event journal** — run lifecycle events can be inspected independently of the latest snapshot.
 - **Restart/resume** — a new runtime can reload a stopped run, restore cognitive state, preserve completed work, and continue after approval.
+- **Structured model adapters** — provider-neutral model boundary with JSON normalization, validation, repair attempts, and model-route fallback.
+- **Model-driven planner** — converts the complete goal contract plus memory/world context into normalized dependency-aware specialist tasks.
+- **Model-backed specialists** — role-specific agents receive the original goal, task, completed work, memory, and world state without hard-wiring one provider.
 
-## Deliberate limitations of v0.1
+## Deliberate limitations of v0.3
 
 This is the cognitive control plane, not yet a fully autonomous agent platform. It does not yet provide:
 
 - transactional database-backed persistence for multi-process production workloads,
-- live LLM/provider adapters,
+- live provider-specific API adapters (the provider-neutral model layer now exists),
 - parallel worker scheduling,
 - browser/computer-use workers,
 - sandbox lifecycle management,
 - event/schedule triggers,
 - policy engine for automatic risk classification,
-- resumable runs after process restart,
 - self-modification of production code.
 
 Those are staged additions. The core is intentionally provider-neutral so stronger models can be swapped in later.
@@ -50,8 +52,8 @@ node --test cognitive-os/test/*.test.js
 ## Next architecture slice
 
 1. Postgres/Supabase persistence adapter with concurrency control.
-2. Model adapter interface and specialist worker prompts.
-3. Tool permission/risk policy layer.
-4. Parallel task scheduler with budgets/timeouts.
-5. Browser/code/data workers.
+2. Tool permission/risk policy layer.
+3. Parallel task scheduler with budgets/timeouts.
+4. Browser/code/data workers.
+5. Adaptive replanning and uncertainty/assumption tracking.
 6. Evaluation harness and controlled improvement proposals.
