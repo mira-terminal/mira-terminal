@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AgentLifecycleManager, DeliberativeCouncil } from './council.js';
+import { AgentLifecycleManager, DeliberativeCouncil } from '../src/council.js';
 
 test('lifecycle ranks agents by observed performance and retires chronic underperformers', () => {
   const lifecycle = new AgentLifecycleManager({ minSamplesBeforeRetire: 2, retireBelowScore: 0.4 });

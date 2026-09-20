@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AdversarialRedTeamArena, CounterfactualSimulator, PreMortemGate } from './simulation.js';
+import { AdversarialRedTeamArena, CounterfactualSimulator, PreMortemGate } from '../src/simulation.js';
 
 test('counterfactual gate blocks catastrophic tail risk even when average utility is positive', async()=>{
   const simulator=new CounterfactualSimulator({
