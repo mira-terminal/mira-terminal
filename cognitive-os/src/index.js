@@ -20,3 +20,4 @@ export * from './improvement-lab.js';
 export * from './council.js';
 export * from './meta-cognition.js';
 export * from './portfolio.js';
+export * from './simulation.js';
