@@ -22,3 +22,4 @@ export * from './meta-cognition.js';
 export * from './portfolio.js';
 export * from './simulation.js';
 export * from './apex-system.js';
+export * from './postgres-persistence.js';
