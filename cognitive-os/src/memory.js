@@ -1,8 +1,16 @@
 export class MemoryStore {
-  constructor() {
+  constructor(snapshot = null) {
     this.working = new Map();
     this.episodes = [];
     this.semantic = new Map();
+    if (snapshot) this.hydrate(snapshot);
+  }
+
+  hydrate(snapshot = {}) {
+    this.working = new Map(Object.entries(snapshot.working || {}));
+    this.episodes = structuredClone(snapshot.episodes || []);
+    this.semantic = new Map(Object.entries(snapshot.semantic || {}));
+    return this;
   }
 
   setWorking(key, value) {

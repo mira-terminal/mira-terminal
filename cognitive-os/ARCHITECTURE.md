@@ -42,8 +42,11 @@ Completed Run + Episode
 ### v0.1 — Cognitive kernel (current)
 Goal/state/memory/planning/orchestration/verification/recovery/governance primitives.
 
-### v0.2 — Persistence
-Durable run ledger, event sourcing, checkpoint/resume, database-backed memory.
+### v0.2 — Persistence (current)
+Durable file/in-memory run ledger, append-only event journal, cognitive snapshots, checkpoint/resume, and no-repeat continuation of completed work.
+
+### v0.2.1 — Production persistence
+Postgres/Supabase adapter, optimistic concurrency, run leases, and multi-worker safety.
 
 ### v0.3 — Intelligence adapters
 Provider-neutral LLM interface, model routing, specialist roles, structured-output enforcement.

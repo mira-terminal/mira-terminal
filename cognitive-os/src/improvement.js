@@ -1,6 +1,11 @@
 export class ImprovementLog {
-  constructor() {
-    this.lessons = [];
+  constructor(snapshot = null) {
+    this.lessons = structuredClone(snapshot || []);
+  }
+
+  hydrate(snapshot = []) {
+    this.lessons = structuredClone(snapshot);
+    return this;
   }
 
   record(lesson) {
