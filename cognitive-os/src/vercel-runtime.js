@@ -41,7 +41,7 @@ export async function getVercelRuntime({
 
     pool = poolFactory({
       connectionString: databaseUrl,
-      max: Number(env.MIRA_DB_POOL_MAX || 10),
+      max: Number(env.MIRA_DB_POOL_MAX || 1),
       idleTimeoutMillis: Number(env.MIRA_DB_IDLE_TIMEOUT_MS || 30_000),
       connectionTimeoutMillis: Number(env.MIRA_DB_CONNECT_TIMEOUT_MS || 10_000),
       ssl: String(env.MIRA_DB_SSL || 'true').toLowerCase() === 'true'
