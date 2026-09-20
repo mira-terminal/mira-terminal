@@ -48,11 +48,11 @@ Durable file/in-memory run ledger, append-only event journal, cognitive snapshot
 ### v0.2.1 — Production persistence
 Postgres/Supabase adapter, optimistic concurrency, run leases, and multi-worker safety.
 
-### v0.3 — Intelligence adapters (current)
+### v0.3 — Intelligence adapters
 Provider-neutral structured model interface, repair-on-invalid-output, role-aware model routing with fallback, model-driven planning, and model-backed specialist agents. Provider-specific API bindings remain external adapters.
 
-### v0.4 — Tool execution plane
-Browser, code sandbox, web research, files, APIs, database and connector adapters with permissions.
+### v0.4 — Governed tool execution plane (current)
+Tool registry, explicit risk/permission/effect metadata, deterministic policy rules, one-use approval gates, critical-risk default denial, fail-closed timeouts, and audit events. Concrete browser/code/data/API adapters remain the next integration layer.
 
 ### v0.5 — Adaptive cognition
 Replanning from changed world state, uncertainty tracking, assumption challenges, alternative-plan generation, pre-mortem/red-team loops.
