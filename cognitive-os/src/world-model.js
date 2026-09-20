@@ -1,9 +1,18 @@
 export class WorldModel {
-  constructor() {
+  constructor(snapshot = null) {
     this.version = 0;
     this.facts = new Map();
     this.assumptions = new Map();
     this.observations = [];
+    if (snapshot) this.hydrate(snapshot);
+  }
+
+  hydrate(snapshot = {}) {
+    this.version = Number(snapshot.version || 0);
+    this.facts = new Map(Object.entries(snapshot.facts || {}));
+    this.assumptions = new Map(Object.entries(snapshot.assumptions || {}));
+    this.observations = structuredClone(snapshot.observations || []);
+    return this;
   }
 
   observe(observation) {

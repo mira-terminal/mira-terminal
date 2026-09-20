@@ -5,4 +5,5 @@ export * from './registry.js';
 export * from './verifier.js';
 export * from './planner.js';
 export * from './improvement.js';
+export * from './persistence.js';
 export * from './orchestrator.js';
