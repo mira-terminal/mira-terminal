@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MiraApexSystem } from './apex-system.js';
+import { MiraApexSystem } from '../src/apex-system.js';
 
 test('apex pre-execution path blocks plans that fail red-team/premortem gates', async()=>{
   const apex=new MiraApexSystem({
