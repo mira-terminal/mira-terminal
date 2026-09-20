@@ -23,3 +23,4 @@ export * from './portfolio.js';
 export * from './simulation.js';
 export * from './apex-system.js';
 export * from './postgres-persistence.js';
+export * from './scheduler.js';
