@@ -100,7 +100,7 @@ export class AgentLifecycleManager {
 export class DeliberativeCouncil {
   constructor({ lifecycle, evaluator, minMembers = 2, disagreementThreshold = 0.25 } = {}) {
     if (!lifecycle) throw new Error('lifecycle is required');
-    if (typeof evaluator !== 'function') throw new Error(evaluator is required);
+    if (typeof evaluator !== 'function') throw new Error('evaluator is required');
     this.lifecycle = lifecycle;
     this.evaluator = evaluator;
     this.minMembers = Math.max(2, Number(minMembers));
@@ -109,7 +109,7 @@ export class DeliberativeCouncil {
 
   async deliberate({ question, role = null, capability = null, context = {}, members = 3 } = {}) {
     const selected = this.lifecycle.select({ role, capability, limit: Math.max(this.minMembers, members) });
-    if (selected.length < this.minMembers) throw new Error('Insufficient independent council members');
+    if (selected.length < this.minMembers) throw new Error('insufficient independent council members');
 
     const proposals = [];
     for (const agent of selected) {
