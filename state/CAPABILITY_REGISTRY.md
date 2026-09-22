@@ -11,11 +11,11 @@ Rule: this registry records only what has been observed in the current architect
 | File generation | executable | Current tool surface |
 | Project/memory context | available | Useful but not authoritative state |
 | GitHub | connected + authenticated + executable + verified | Read private pigeon repo; created this isolated development branch |
-| Gmail | exposed | Connection/auth not retested in this audit |
-| Google Calendar | exposed | Connection/auth not retested in this audit |
-| Google Drive | exposed | Connection/auth not retested in this audit |
-| Vercel | exposed | Project authentication/execution not retested |
-| Supabase | exposed | Project authentication/execution not retested |
+| Gmail | connected + authenticated + read-executable + verified | INBOX label read succeeded during 12.9R audit; no mutation performed |
+| Google Calendar | connected + authenticated + read-executable + verified | Calendar-list read succeeded; no mutation performed |
+| Google Drive | connected + authenticated + read-executable + verified | Bounded one-result metadata search succeeded; no mutation performed |
+| Vercel | connected + authenticated + read-executable + verified | Team-list read succeeded; no deployment/mutation performed |
+| Supabase | connected + authenticated + read-executable + verified | Project-list read succeeded; no database/project mutation performed |
 | Automations | available | Not exercised in this audit |
 | ChatGPT Work | available product execution environment | Separate runtime; handoff test still required |
 | Computer/browser operation | environment-dependent | Do not infer attached authenticated owner session |
