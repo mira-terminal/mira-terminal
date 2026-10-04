@@ -1,4 +1,5 @@
 import express from "express";
+import { getCapabilityStatus } from "./capabilities/registry.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -34,13 +35,29 @@ app.get("/", (_req, res) => {
       <h2>Mira Terminal</h2>
       <p>Persistent runtime online.</p>
       <p><a href="/health">Health</a></p>
+      <p><a href="/api/capabilities">Capability integrations</a></p>
       <p>Moltbook bridge: read-only reconnaissance.</p>
     </body></html>
   `);
 });
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, moltbookConfigured: Boolean(MOLTBOOK_KEY), time: new Date().toISOString() });
+  const capabilities = getCapabilityStatus();
+  res.json({
+    ok: true,
+    moltbookConfigured: Boolean(MOLTBOOK_KEY),
+    capabilitiesConfigured: capabilities.filter((item) => item.configured).length,
+    capabilitiesIntegrated: capabilities.length,
+    time: new Date().toISOString(),
+  });
+});
+
+app.get("/api/capabilities", (_req, res) => {
+  res.json({
+    identity: "Mira",
+    architecture: "one executive identity with subordinate capabilities",
+    capabilities: getCapabilityStatus(),
+  });
 });
 
 app.get("/api/moltbook/status", async (_req, res) => {
