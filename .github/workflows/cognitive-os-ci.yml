@@ -1,0 +1,29 @@
+name: Mira Cognitive OS CI
+
+on:
+  push:
+    branches:
+      - "work/mira-cognitive-os-*"
+  pull_request:
+    paths:
+      - "cognitive-os/**"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run complete cognitive test suite
+        run: npm test
